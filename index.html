@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Persistency Calculator</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      background-color: #f5f5f7;
+      color: #1d1d1f;
+      text-align: center;
+      padding: 20px;
+      margin: 0;
+    }
+    .container {
+      max-width: 600px;
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin: auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    textarea, select {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      background: #0071e3;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+      width: 100%;
+    }
+    button:hover {
+      background: #005bb5;
+    }
+    #result {
+      margin-top: 20px;
+      text-align: left;
+    }
+    .guide {
+      margin-top: 30px;
+      text-align: left;
+    }
+    .collapsible {
+      background-color: #e0e0e5;
+      color: #1d1d1f;
+      cursor: pointer;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      text-align: left;
+      font-weight: 600;
+      font-size: 16px;
+      margin-top: 20px;
+      width: 100%;
+    }
+    .content {
+      padding: 10px;
+      display: none;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-top: 10px;
+      background: #f9f9fa;
+      white-space: pre-wrap;
+      font-size: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Persistency Calculator</h2>
+
+    <label><b>Choose Persistency Type:</b></label><br>
+    <select id="persistencyType">
+      <option value="13">13-Month Persistency</option>
+      <option value="12">12-Month Persistency</option>
+    </select>
+
+    <textarea id="dataInput" rows="10" placeholder="Paste policy data here..."></textarea>
+
+    <button onclick="calculate()">Calculate</button>
+
+    <div id="result"></div>
+
+    <button class="collapsible">🧠 Show Guide: How to Extract Data Using ChatGPT</button>
+    <div class="content">
+      1. Open your Manulife PDF report and copy the relevant policy section.
+
+      2. Open ChatGPT and paste the following prompt:
+
+      ----
+      Please extract the following details from the copied Manulife report:
+
+      Format:
+      PolicyNo, Name, MonthsPaid, PsistANP, Status, PersistencyBlock, ReportDate
+
+      Example:
+      00915703, CHEAH YU JUN, 10, 3600.00, LC, 01-JUN-2023 to 31-MAY-2024, 11/07/2025
+
+      Notes:
+      - Only include actual policies (skip totals or headers)
+      - PersistencyBlock = date range near top (e.g. "01-JUN-2023 to 31-MAY-2024")
+      - ReportDate = top-left corner date (e.g. "11/07/2025")
+      ----
+
+      3. Copy the extracted list and paste it into the calculator above.
+    </div>
+  </div>
+
+  <script>
+    document.querySelector(".collapsible").onclick = function () {
+      this.classList.toggle("active");
+      const content = this.nextElementSibling;
+      content.style.display = content.style.display === "block" ? "none" : "block";
+    };
+
+    function calculate() {
+      const raw = document.getElementById("dataInput").value.trim();
+      const lines = raw.split("\n");
+      const threshold = parseInt(document.getElementById("persistencyType").value);
+
+      let totalANP = 0;
+      let persistedANP = 0;
+      let saveable = [];
+
+      for (let line of lines) {
+        const [policyNo, name, monthsPaidStr, anpStr, status, block, reportDate] = line.split(",").map(s => s.trim());
+        const monthsPaid = parseInt(monthsPaidStr);
+        const anp = parseFloat(anpStr);
+
+        if (isNaN(anp) || anp <= 0) continue;
+
+        totalANP += anp;
+
+        if (monthsPaid >= threshold) {
+          persistedANP += anp;
+        } else {
+          saveable.push({ policyNo, name, monthsPaid, anp, status });
+        }
+      }
+
+      const persistency = totalANP === 0 ? 0 : (persistedANP / totalANP) * 100;
+      const roundedPersistency = Math.round(persistency * 10) / 10;
+      const targetANP = totalANP * 0.85;
+      const shortfall = targetANP - persistedANP;
+
+      let suggestion = "";
+      if (shortfall > 0) {
+        let added = 0;
+        const priority = { "IP": 1, "LC": 2, "LA": 2, "TC": 3 };
+
+        saveable.sort((a, b) => {
+          const prioA = priority[a.status] || 99;
+          const prioB = priority[b.status] || 99;
+          if (prioA !== prioB) return prioA - prioB;
+          return b.anp - a.anp;
+        });
+
+        let recovering = [];
+        for (let p of saveable) {
+          if (added >= shortfall) break;
+          added += p.anp;
+          recovering.push(p);
+        }
+
+        suggestion = `<p>❌ Persistency is below 85%. To reach it, you need an additional <b>RM ${shortfall.toFixed(2)}</b>. Suggested policies to recover:</p><ul>`;
+        for (let p of recovering) {
+          suggestion += `<li><b>${p.policyNo}</b> – ${p.name} – RM ${p.anp.toFixed(2)} – ${p.monthsPaid} months paid – Status: ${p.status}</li>`;
+        }
+        suggestion += "</ul>";
+      }
+
+      document.getElementById("result").innerHTML = `
+        <p><b>Total Psist ANP:</b> RM ${totalANP.toFixed(2)}</p>
+        <p><b>Persisted ANP (≥ ${threshold} months):</b> RM ${persistedANP.toFixed(2)}</p>
+        <p><b>Persistency:</b> ${roundedPersistency}%</p>
+        ${suggestion || "<p>✅ Persistency is 85% or above.</p>"}
+      `;
+    }
+  </script>
+</body>
+</html>
