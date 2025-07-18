@@ -218,15 +218,9 @@ Notes:
           recovering.push(p);
         }
 
-        suggestion = `
-<div class="suggestion-box">
-  <p>❌ <strong>Persistency is below 85%</strong></p>
-  <p>You need an additional <b>RM ${shortfall.toLocaleString(undefined, { minimumFractionDigits: 2 })}</b> to meet target.</p>
-  <p>Suggested policies to recover:</p>
-  <ul>
-`;
+        suggestion = `<div style="margin-top: 20px;"></div><p>❌ Persistency is below 85%. To reach it, you need an additional <b>RM ${shortfall.toLocaleString(undefined, { minimumFractionDigits: 2 })}</b>. 💡Suggested policies to recover:</p><ul>`;
         for (let p of recovering) {
-          suggestion += `<li><b>💡${p.policyNo}</b> – ${p.name} – RM ${p.anp.toLocaleString(undefined, { minimumFractionDigits: 2 })} – ${p.monthsPaid} months paid – Status: ${statusLabels[p.status] || p.status}</li>`;
+          suggestion += `<li><b>${p.policyNo}</b> – ${p.name} – RM ${p.anp.toLocaleString(undefined, { minimumFractionDigits: 2 })} – ${p.monthsPaid} months paid – Status: ${statusLabels[p.status] || p.status}</li>`;
         }
         suggestion += "</ul>";
       }
