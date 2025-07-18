@@ -114,8 +114,25 @@
       <div class="guide">
         <div class="guide-step"><strong>Step 1:</strong> Open the Manulife report (PDF or scanned text).</div>
         <div class="guide-step"><strong>Step 2:</strong> Copy the whole table content (including headers).</div>
-        <div class="guide-step"><strong>Step 3:</strong> In ChatGPT, paste the content and type:</div>
-        <pre style="margin-top: 10px; white-space: pre-wrap;"><code><textarea id="hiddenPrompt" style="opacity: 0; position: absolute; left: -9999px;">
+    <!-- Step 3 visible display -->
+<div class="guide-step"><strong>Step 3:</strong> In ChatGPT, paste the content and type:</div>
+<pre style="margin-top: 10px; white-space: pre-wrap;"><code>
+Please extract the following details from the copied Manulife report:
+
+Format:
+PolicyNo, Name, MonthsPaid, PsistANP, Status, PersistencyBlock, ReportDate
+
+Example:
+00999998, MOU TAK DENG, 10, 3,600.00, LC, 01-JUN-2023 to 31-MAY-2024, 11/07/2025
+
+Notes:
+- Only include actual policies (skip totals or headers)
+- PersistencyBlock = date range near top (e.g. "01-JUN-2023 to 31-MAY-2024")
+- ReportDate = top-left corner date (e.g. "11/07/2025")
+</code></pre>
+
+<!-- Hidden textarea for copying -->
+<textarea id="hiddenPrompt" style="opacity: 0; position: absolute; left: -9999px;">
 Please extract the following details from the copied Manulife report:
 
 Format:
@@ -129,10 +146,9 @@ Notes:
 - PersistencyBlock = date range near top (e.g. "01-JUN-2023 to 31-MAY-2024")
 - ReportDate = top-left corner date (e.g. "11/07/2025")
 </textarea>
-</code></pre>
-        <button id="copyGuide" class="copy-button">📋 Copy Prompt</button>
-        <div class="guide-step"><strong>Step 4:</strong> Copy the cleaned result and paste it into the calculator above.</div>
-      </div>
+
+<!-- Copy Button -->
+<button id="copyGuide" class="copy-button">📋 Copy Prompt</button>
     </details>
 
 
