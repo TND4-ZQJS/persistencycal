@@ -210,7 +210,7 @@ Notes:
 
         suggestion = `<p>❌ Persistency is below 85%. To reach it, you need an additional <b>RM ${shortfall.toLocaleString(undefined, { minimumFractionDigits: 2 })}</b>. Suggested policies to recover:</p><ul>`;
         for (let p of recovering) {
-          suggestion += `<li><b>${p.policyNo}</b> – ${p.name} – RM ${p.anp.toLocaleString(undefined, { minimumFractionDigits: 2 })} – ${p.monthsPaid} months paid – Status: ${statusLabels[p.status] || p.status}</li>`;
+          suggestion += `<li><b>💡${p.policyNo}</b> – ${p.name} – RM ${p.anp.toLocaleString(undefined, { minimumFractionDigits: 2 })} – ${p.monthsPaid} months paid – Status: ${statusLabels[p.status] || p.status}</li>`;
         }
         suggestion += "</ul>";
       }
