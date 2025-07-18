@@ -77,6 +77,20 @@
       input, select, button {
         width: 100%;
     }
+      .copy-button {
+  background-color: #0071e3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.copy-button:hover {
+  background-color: #005bb5;
+}
   </style>
 </head>
 <body>
@@ -114,6 +128,7 @@ Notes:
 - PersistencyBlock = date range near top (e.g. "01-JUN-2023 to 31-MAY-2024")
 - ReportDate = top-left corner date (e.g. "11/07/2025")
 </code></pre>
+        <button id="copyGuide" class="copy-button">📋 Copy Prompt</button>
         <div class="guide-step"><strong>Step 4:</strong> Copy the cleaned result and paste it into the calculator above.</div>
       </div>
     </details>
@@ -125,7 +140,25 @@ Notes:
       const content = this.nextElementSibling;
       content.style.display = content.style.display === "block" ? "none" : "block";
     };
+    
+document.getElementById("copyGuide").onclick = function () {
+  const promptText = `Please extract the following details from the copied Manulife report:
 
+Format:
+PolicyNo, Name, MonthsPaid, PsistANP, Status, PersistencyBlock, ReportDate
+
+Example:
+00999998, MOU TAK DENG, 10, 3,600.00, LC, 01-JUN-2023 to 31-MAY-2024, 11/07/2025
+
+Notes:
+- Only include actual policies (skip totals or headers)
+- PersistencyBlock = date range near top (e.g. "01-JUN-2023 to 31-MAY-2024")
+- ReportDate = top-left corner date (e.g. "11/07/2025")`;
+
+  navigator.clipboard.writeText(promptText).then(() => {
+    alert("Prompt copied to clipboard!");
+  });
+};
     function calculate() {
       const raw = document.getElementById("dataInput").value.trim();
       const lines = raw.split("\n");
