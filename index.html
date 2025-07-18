@@ -56,7 +56,7 @@
       color: #1d1d1f;
       border: 1px solid #0071e3;
     }
-    .collapsible {
+    summary {
       font-size: 16px;
       font-weight: bold;
       cursor: pointer;
@@ -64,12 +64,15 @@
       background-color: #f0f4ff;
       border-radius: 8px;
     }
-    .content {
-      {
+    
+    .guide-step {
       margin: 10px 0;
       line-height: 1.6;
     }
-
+    details[open] summary {
+      background-color: #dceeff;
+      color: #0071e3;
+    }
     @media (max-width: 480px) {
       input, select, button {
         width: 100%;
@@ -92,29 +95,28 @@
 
     <div id="result"></div>
 
-    <button class="collapsible">🧠 Show Guide: How to Extract Data Using ChatGPT</button>
-    <div class="content">
-      1. Open your Manulife PDF report and copy the relevant policy section.
+    <details>
+      <summary>📘 Show Guide</summary>
+      <div class="guide-box">
+        <div class="guide-step"><strong>Step 1:</strong> Open the Manulife report (PDF or scanned text).</div>
+        <div class="guide-step"><strong>Step 2:</strong> Copy the whole table content (including headers).</div>
+        <div class="guide-step"><strong>Step 3:</strong> In ChatGPT, paste the content and type:</div>
+        <pre style="margin-top: 10px; white-space: pre-wrap;"><code>Please extract the following details from the copied Manulife report:
 
-      2. Open ChatGPT and paste the following prompt:
+Format:
+PolicyNo, Name, MonthsPaid, PsistANP, Status, PersistencyBlock, ReportDate
 
-      ----
-      Please extract the following details from the copied Manulife report:
+Example:
+00915703, CHEAH YU JUN, 10, 3,600.00, LC, 01-JUN-2023 to 31-MAY-2024, 11/07/2025
 
-      Format:
-      PolicyNo, Name, MonthsPaid, PsistANP, Status, PersistencyBlock, ReportDate
-
-      Example:
-      00915703, MOU TUCK DENG, 10, 3600.00, LC, 01-JUN-2023 to 31-MAY-2024, 11/07/2025
-
-      Notes:
-      - Only include actual policies (skip totals or headers)
-      - PersistencyBlock = date range near top (e.g. "01-JUN-2023 to 31-MAY-2024")
-      - ReportDate = top-left corner date (e.g. "11/07/2025")
-      ----
-
-      3. Copy the extracted list and paste it into the calculator above.
-    </div>
+Notes:
+- Only include actual policies (skip totals or headers)
+- PersistencyBlock = date range near top (e.g. "01-JUN-2023 to 31-MAY-2024")
+- ReportDate = top-left corner date (e.g. "11/07/2025")
+</code></pre>
+        <div class="guide-step"><strong>Step 4:</strong> Copy the cleaned result and paste it into the calculator above.</div>
+      </div>
+    </details>
   </div>
 
   <script>
