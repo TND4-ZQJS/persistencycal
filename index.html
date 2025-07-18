@@ -48,7 +48,7 @@
       text-align: left;
     }
     .guide {
-       text-align: left;
+      text-align: left;
       margin-top: 20px;
       border-radius: 8px;
       background-color: #e5f1ff;
@@ -64,7 +64,6 @@
       background-color: #f0f4ff;
       border-radius: 8px;
     }
-    
     .guide-step {
       margin: 10px 0;
       line-height: 1.6;
@@ -73,24 +72,25 @@
       background-color: #dceeff;
       color: #0071e3;
     }
+    .copy-button {
+      background-color: #0071e3;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 14px;
+      margin-top: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .copy-button:hover {
+      background-color: #005bb5;
+    }
     @media (max-width: 480px) {
       input, select, button {
         width: 100%;
+      }
     }
-      .copy-button {
-  background-color: #0071e3;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 14px;
-  margin-top: 10px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-.copy-button:hover {
-  background-color: #005bb5;
-}
   </style>
 </head>
 <body>
@@ -104,7 +104,6 @@
     </select>
 
     <textarea id="dataInput" rows="10" placeholder="Paste policy data here..."></textarea>
-
     <button onclick="calculate()">Calculate</button>
 
     <div id="result"></div>
@@ -114,9 +113,9 @@
       <div class="guide">
         <div class="guide-step"><strong>Step 1:</strong> Open the Manulife report (PDF or scanned text).</div>
         <div class="guide-step"><strong>Step 2:</strong> Copy the whole table content (including headers).</div>
-    <!-- Step 3 visible display -->
-<div class="guide-step"><strong>Step 3:</strong> In ChatGPT, paste the content and type:</div>
-<pre style="margin-top: 10px; white-space: pre-wrap;"><code>
+        <div class="guide-step"><strong>Step 3:</strong> In ChatGPT, paste the content and type:</div>
+        <pre style="margin-top: 10px; white-space: pre-wrap;">
+<code id="hiddenPrompt">
 Please extract the following details from the copied Manulife report:
 
 Format:
@@ -129,49 +128,29 @@ Notes:
 - Only include actual policies (skip totals or headers)
 - PersistencyBlock = date range near top (e.g. "01-JUN-2023 to 31-MAY-2024")
 - ReportDate = top-left corner date (e.g. "11/07/2025")
-</code></pre>
+</code>
+</pre>
+        <button class="copy-button" onclick="copyPrompt()">📋 Copy Prompt</button>
 
-<!-- Hidden textarea for copying -->
-<textarea id="hiddenPrompt" style="opacity: 0; position: absolute; left: -9999px;">
-Please extract the following details from the copied Manulife report:
-
-Format:
-PolicyNo, Name, MonthsPaid, PsistANP, Status, PersistencyBlock, ReportDate
-
-Example:
-00999998, MOU TAK DENG, 10, 3,600.00, LC, 01-JUN-2023 to 31-MAY-2024, 11/07/2025
-
-Notes:
-- Only include actual policies (skip totals or headers)
-- PersistencyBlock = date range near top (e.g. "01-JUN-2023 to 31-MAY-2024")
-- ReportDate = top-left corner date (e.g. "11/07/2025")
-</textarea>
-
-<!-- Copy Button -->
-<button id="copyGuide" class="copy-button">📋 Copy Prompt</button>
+        <div class="guide-step"><strong>Step 4:</strong> Copy the cleaned result and paste it into the calculator above.</div>
+      </div>
     </details>
-
+  </div>
 
   <script>
-    document.querySelector(".collapsible").onclick = function () {
-      this.classList.toggle("active");
-      const content = this.nextElementSibling;
-      content.style.display = content.style.display === "block" ? "none" : "block";
-    };
-    
-document.getElementById("copyGuide").onclick = function () {
-  const promptText = document.getElementById("hiddenPrompt").value;
+    function copyPrompt() {
+      const code = document.getElementById("hiddenPrompt").innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = document.querySelector(".copy-button");
+        btn.textContent = "✅ Copied!";
+        setTimeout(() => {
+          btn.textContent = "📋 Copy Prompt";
+        }, 2000);
+      }).catch(() => {
+        alert("❌ Copy failed. Please try again.");
+      });
+    }
 
-  navigator.clipboard.writeText(promptText).then(() => {
-    const btn = document.getElementById("copyGuide");
-    btn.textContent = "✅ Copied!";
-    setTimeout(() => {
-      btn.textContent = "📋 Copy Prompt";
-    }, 2000);
-  }).catch(() => {
-    alert("❌ Copy failed. Please try again.");
-  });
-};
     function calculate() {
       const raw = document.getElementById("dataInput").value.trim();
       const lines = raw.split("\n");
@@ -180,20 +159,21 @@ document.getElementById("copyGuide").onclick = function () {
       let totalANP = 0;
       let persistedANP = 0;
       let saveable = [];
+      let unqualified = [];
 
       for (let line of lines) {
         const [policyNo, name, monthsPaidStr, anpStr, status, block, reportDate] = line.split(",").map(s => s.trim());
         const monthsPaid = parseInt(monthsPaidStr);
-        const anp = parseFloat(anpStr);
+        const anp = parseFloat(anpStr.replace(/,/g, ''));
 
         if (isNaN(anp) || anp <= 0) continue;
-
         totalANP += anp;
 
         if (monthsPaid >= threshold) {
           persistedANP += anp;
         } else {
           saveable.push({ policyNo, name, monthsPaid, anp, status });
+          unqualified.push({ policyNo, name, monthsPaid, anp, status });
         }
       }
 
@@ -201,6 +181,13 @@ document.getElementById("copyGuide").onclick = function () {
       const roundedPersistency = Math.round(persistency * 10) / 10;
       const targetANP = totalANP * 0.85;
       const shortfall = targetANP - persistedANP;
+
+      const statusLabels = {
+        "IP": "IP (inforce)",
+        "LC": "LC (lapsed)",
+        "LA": "LA (lapsed)",
+        "TC": "TC (surrendered)"
+      };
 
       let suggestion = "";
       if (shortfall > 0) {
@@ -221,18 +208,28 @@ document.getElementById("copyGuide").onclick = function () {
           recovering.push(p);
         }
 
-        suggestion = `<p>❌ Persistency is below 85%. To reach it, you need an additional <b>RM ${shortfall.toFixed(2)}</b>. Suggested policies to recover:</p><ul>`;
+        suggestion = `<p>❌ Persistency is below 85%. To reach it, you need an additional <b>RM ${shortfall.toLocaleString(undefined, { minimumFractionDigits: 2 })}</b>. Suggested policies to recover:</p><ul>`;
         for (let p of recovering) {
-          suggestion += `<li><b>${p.policyNo}</b> – ${p.name} – RM ${p.anp.toFixed(2)} – ${p.monthsPaid} months paid – Status: ${p.status}</li>`;
+          suggestion += `<li><b>${p.policyNo}</b> – ${p.name} – RM ${p.anp.toLocaleString(undefined, { minimumFractionDigits: 2 })} – ${p.monthsPaid} months paid – Status: ${statusLabels[p.status] || p.status}</li>`;
         }
         suggestion += "</ul>";
       }
 
+      let unqualifiedList = "";
+      if (unqualified.length > 0) {
+        unqualifiedList = "<h4>📋 Unqualified Policies (for reference):</h4><ul>";
+        for (let p of unqualified) {
+          unqualifiedList += `<li><b>${p.policyNo}</b> – ${p.name} – RM ${p.anp.toLocaleString(undefined, { minimumFractionDigits: 2 })} – ${p.monthsPaid} months paid – Status: ${statusLabels[p.status] || p.status}</li>`;
+        }
+        unqualifiedList += "</ul>";
+      }
+
       document.getElementById("result").innerHTML = `
-        <p><b>Total Persistency ANP:</b> RM ${totalANP.toFixed(2)}</p>
-        <p><b>Persisted ANP (≥ ${threshold} months):</b> RM ${persistedANP.toFixed(2)}</p>
+        <p><b>Total Persistency ANP:</b> RM ${totalANP.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+        <p><b>Persisted ANP (≥ ${threshold} months):</b> RM ${persistedANP.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
         <p><b>Persistency:</b> ${roundedPersistency}%</p>
         ${suggestion || "<p>✅ Persistency is 85% or above.</p>"}
+        ${unqualifiedList}
       `;
     }
   </script>
